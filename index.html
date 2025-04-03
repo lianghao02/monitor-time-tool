@@ -11,6 +11,7 @@
       margin: 0;
       padding: 0;
       background-color: #f3f4f6;
+      color: #111827;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -101,11 +102,17 @@
     /* 夜間模式樣式 */
     body.night {
       background-color: #222;
-      color: #eee;
+      color: #ddd;
     }
     .container.night {
       background-color: #333;
       box-shadow: none;
+    }
+    .container.night h2 {
+      color: #fff;
+    }
+    .container.night label {
+      color: #ccc;
     }
     input[type="text"].night {
       background-color: #444;
@@ -114,6 +121,12 @@
     }
     .result.night {
       color: #ddd;
+    }
+    .version.night {
+      color: #aaa;
+    }
+    .toggle-btn.night {
+      background-color: #555;
     }
   </style>
 </head>
@@ -151,7 +164,7 @@
     <button class="clear-btn" id="clearBtn">清除</button>
     
     <!-- 版本號 -->
-    <div class="version">版本 1.0</div>
+    <div class="version" id="versionInfo">版本 1.0</div>
   </div>
   
   <script>
@@ -210,13 +223,11 @@
       const camSec = hhmmToSeconds(camStr);
       const diff = camSec - stdSec;
       const absDiff = Math.abs(diff);
-      const min = Math.floor(absDiff / 60);
-      const sec = absDiff % 60;
       const sign = diff > 0 ? "走快" : diff < 0 ? "走慢" : "一致";
       
       errorResult.textContent =
         diff === 0 
-        ? "時間一致，無誤差"
+        ? "時間一致，無誤差" 
         : `監視器時間比標準時間${sign}：${secondsToHHmm(absDiff)}`;
       
       return diff;
@@ -264,11 +275,12 @@
     function toggleNightMode() {
       document.body.classList.toggle("night");
       document.getElementById("container").classList.toggle("night");
-      // 同時更新所有 input 與 result 的樣式
       const inputs = document.querySelectorAll("input[type='text']");
       inputs.forEach(input => input.classList.toggle("night"));
       const results = document.querySelectorAll(".result");
       results.forEach(r => r.classList.toggle("night"));
+      document.querySelector(".version").classList.toggle("night");
+      document.querySelector(".toggle-btn").classList.toggle("night");
     }
     
     // 綁定事件
