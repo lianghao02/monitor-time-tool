@@ -55,8 +55,10 @@
               : `監視器時間比標準時間${sign}：${min} 分 ${sec} 秒`;
         }
 
-        document.getElementById("actualTime").addEventListener("input", showDifference);
-        document.getElementById("cameraTime").addEventListener("input", showDifference);
+        document.addEventListener("DOMContentLoaded", function() {
+            document.getElementById("actualTime").addEventListener("input", showDifference);
+            document.getElementById("cameraTime").addEventListener("input", showDifference);
+        });
     </script>
 </body>
 </html>
