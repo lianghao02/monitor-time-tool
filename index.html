@@ -82,12 +82,12 @@
     <h2>監視器時間自動換算工具</h2>
     
     <!-- 誤差計算區 -->
-    <label>標準時間（誤差計算用，格式 HH:mm）： 
-      <input type="text" id="stdTime" placeholder="例如：14:25" pattern="^([01]\d|2[0-3]):[0-5]\d$">
+    <label>標準時間（誤差計算用，HHmm）： 
+      <input type="text" id="stdTime" placeholder="例如：0825 表示 08:25" pattern="^\d{4}$">
     </label>
     
-    <label>監視器顯示時間（格式 HH:mm）： 
-      <input type="text" id="camTime" placeholder="例如：14:18" pattern="^([01]\d|2[0-3]):[0-5]\d$">
+    <label>監視器顯示時間（HHmm）： 
+      <input type="text" id="camTime" placeholder="例如：0758 表示 07:58" pattern="^\d{4}$">
     </label>
     
     <div class="result" id="errorResult"></div>
@@ -95,68 +95,79 @@
     <hr>
     
     <!-- 反推功能區 -->
-    <label>調閱標準時間（反推用，格式 HH:mm）： 
-      <input type="text" id="queryTime" placeholder="例如：14:05" pattern="^([01]\d|2[0-3]):[0-5]\d$">
+    <label>調閱標準時間（反推用，HHmm）： 
+      <input type="text" id="queryTime" placeholder="例如：0620 表示 06:20" pattern="^\d{4}$">
     </label>
     
     <div class="result" id="reverseResult"></div>
+    
+    <!-- 新增地址欄位 -->
+    <label>地址：
+      <input type="text" id="address" placeholder="請輸入地址以便截圖記錄">
+    </label>
     
     <!-- 清除按鈕 -->
     <button class="clear-btn" id="clearBtn">清除</button>
   </div>
   
   <script>
-    // 驗證時間格式 (HH:mm)
-    function isValidTimeFormat(t) {
-      return /^([01]\d|2[0-3]):[0-5]\d$/.test(t);
+    // 驗證是否為四位數HHmm，並且小時 00~23，分鐘 00~59
+    function isValidHHmmFormat(str) {
+      if (str.length !== 4) return false;
+      if (!/^\d{4}$/.test(str)) return false;
+      const hh = parseInt(str.slice(0, 2), 10);
+      const mm = parseInt(str.slice(2, 4), 10);
+      if (hh < 0 || hh > 23) return false;
+      if (mm < 0 || mm > 59) return false;
+      return true;
     }
     
-    // 將時間字串轉為秒數
-    function timeToSeconds(t) {
-      const [h, m] = t.split(":").map(Number);
-      return h * 3600 + m * 60;
+    // 將HHmm轉為秒數
+    function hhmmToSeconds(str) {
+      const hh = parseInt(str.slice(0, 2), 10);
+      const mm = parseInt(str.slice(2, 4), 10);
+      return hh * 3600 + mm * 60;
     }
     
-    // 將秒數轉回 HH:mm 格式
-    function secondsToTime(sec) {
-      // 調整到 0 ~ 86399 範圍
+    // 將秒數轉回HHmm格式
+    function secondsToHHmm(sec) {
       sec = ((sec % 86400) + 86400) % 86400;
       const h = Math.floor(sec / 3600);
       const m = Math.floor((sec % 3600) / 60);
-      return String(h).padStart(2, '0') + ":" + String(m).padStart(2, '0');
+      return String(h).padStart(2, '0') + String(m).padStart(2, '0');
     }
     
     // 計算誤差（監視器時間 - 標準時間）
     function calculateError() {
-      const std = document.getElementById("stdTime").value.trim();
-      const cam = document.getElementById("camTime").value.trim();
+      const stdStr = document.getElementById("stdTime").value.trim();
+      const camStr = document.getElementById("camTime").value.trim();
       const errorResult = document.getElementById("errorResult");
       
-      if (!isValidTimeFormat(std) || !isValidTimeFormat(cam)) {
-        errorResult.textContent = "請輸入正確格式 (HH:mm) 的標準時間與監視器時間";
+      if (!isValidHHmmFormat(stdStr) || !isValidHHmmFormat(camStr)) {
+        errorResult.textContent = "請輸入四位數時間，如 0825 代表 08:25";
         return null;
       }
       
-      const stdSec = timeToSeconds(std);
-      const camSec = timeToSeconds(cam);
+      const stdSec = hhmmToSeconds(stdStr);
+      const camSec = hhmmToSeconds(camStr);
       const diff = camSec - stdSec;
       const absDiff = Math.abs(diff);
       const min = Math.floor(absDiff / 60);
       const sec = absDiff % 60;
       const sign = diff > 0 ? "走快" : diff < 0 ? "走慢" : "一致";
       
-      errorResult.textContent = 
-        diff === 0 
-        ? "時間一致，無誤差" 
+      errorResult.textContent =
+        diff === 0
+        ? "時間一致，無誤差"
         : `監視器時間比標準時間${sign}：${min} 分 ${sec} 秒`;
       
       return diff;
     }
     
-    // 反推：根據「調閱標準時間」與誤差，計算對應的監視器時間
+    // 反推：根據「調閱標準時間」與誤差，計算對應的監視器時間（HHmm）
     function calculateReverse() {
       const diff = calculateError();
-      const query = document.getElementById("queryTime").value.trim();
+      const queryStr = document.getElementById("queryTime").value.trim();
       const reverseResult = document.getElementById("reverseResult");
       
       if (diff === null) {
@@ -164,14 +175,14 @@
         return;
       }
       
-      if (!isValidTimeFormat(query)) {
-        reverseResult.textContent = "請輸入正確格式 (HH:mm) 的調閱標準時間";
+      if (!isValidHHmmFormat(queryStr)) {
+        reverseResult.textContent = "請輸入四位數時間，如 0620 代表 06:20";
         return;
       }
       
-      const querySec = timeToSeconds(query);
-      const camTimeSec = querySec + diff; // 依據誤差修正
-      reverseResult.textContent = "對應的監視器時間應為：" + secondsToTime(camTimeSec);
+      const querySec = hhmmToSeconds(queryStr);
+      const camTimeSec = querySec + diff;
+      reverseResult.textContent = "對應的監視器時間應為：" + secondsToHHmm(camTimeSec);
     }
     
     // 清除所有欄位與結果
@@ -179,22 +190,22 @@
       document.getElementById("stdTime").value = "";
       document.getElementById("camTime").value = "";
       document.getElementById("queryTime").value = "";
+      document.getElementById("address").value = "";
       document.getElementById("errorResult").textContent = "";
       document.getElementById("reverseResult").textContent = "";
     }
     
-    // 當文件載入完成後，綁定事件
-    document.addEventListener("DOMContentLoaded", function() {
-      document.getElementById("stdTime").addEventListener("input", function() {
+    // 綁定事件
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("stdTime").addEventListener("input", () => {
         calculateError();
         calculateReverse();
       });
-      document.getElementById("camTime").addEventListener("input", function() {
+      document.getElementById("camTime").addEventListener("input", () => {
         calculateError();
         calculateReverse();
       });
       document.getElementById("queryTime").addEventListener("input", calculateReverse);
-      
       document.getElementById("clearBtn").addEventListener("click", clearFields);
     });
   </script>
