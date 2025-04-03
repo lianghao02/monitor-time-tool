@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>監視器時間自動換算工具 - 反推功能</title>
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f3f4f6;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      max-width: 400px;
+      width: 90%;
+    }
+    h2 {
+      margin-top: 0;
+      font-size: 1.5em;
+      color: #111827;
+      text-align: center;
+    }
+    label {
+      display: block;
+      margin-top: 16px;
+      color: #374151;
+      font-weight: 500;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      font-size: 1em;
+      margin-top: 6px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      background-color: #f9fafb;
+    }
+    .result {
+      margin-top: 24px;
+      font-size: 1.2em;
+      font-weight: bold;
+      color: #1f2937;
+      text-align: center;
+    }
+    hr {
+      margin: 24px 0;
+      border: 0;
+      border-top: 1px solid #e5e7eb;
+    }
+    .clear-btn {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      margin-top: 16px;
+      font-size: 1em;
+      background-color: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .clear-btn:hover {
+      background-color: #2563eb;
+    }
+    @media (max-width: 500px) {
+      h2 { font-size: 1.3em; }
+      .result { font-size: 1em; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>監視器時間自動換算工具</h2>
+    
+    <!-- 誤差計算區 -->
+    <label>標準時間（誤差計算用，格式 HH:mm）： 
+      <input type="text" id="stdTime" placeholder="例如：14:25" pattern="^([01]\d|2[0-3]):[0-5]\d$">
+    </label>
+    
+    <label>監視器顯示時間（格式 HH:mm）： 
+      <input type="text" id="camTime" placeholder="例如：14:18" pattern="^([01]\d|2[0-3]):[0-5]\d$">
+    </label>
+    
+    <div class="result" id="errorResult"></div>
+    
+    <hr>
+    
+    <!-- 反推功能區 -->
+    <label>調閱標準時間（反推用，格式 HH:mm）： 
+      <input type="text" id="queryTime" placeholder="例如：14:05" pattern="^([01]\d|2[0-3]):[0-5]\d$">
+    </label>
+    
+    <div class="result" id="reverseResult"></div>
+    
+    <!-- 清除按鈕 -->
+    <button class="clear-btn" id="clearBtn">清除</button>
+  </div>
+  
+  <script>
+    // 驗證時間格式 (HH:mm)
+    function isValidTimeFormat(t) {
+      return /^([01]\d|2[0-3]):[0-5]\d$/.test(t);
+    }
+    
+    // 將時間字串轉為秒數
+    function timeToSeconds(t) {
+      const [h, m] = t.split(":").map(Number);
+      return h * 3600 + m * 60;
+    }
+    
+    // 將秒數轉回 HH:mm 格式
+    function secondsToTime(sec) {
+      // 調整到 0 ~ 86399 範圍
+      sec = ((sec % 86400) + 86400) % 86400;
+      const h = Math.floor(sec / 3600);
+      const m = Math.floor((sec % 3600) / 60);
+      return String(h).padStart(2, '0') + ":" + String(m).padStart(2, '0');
+    }
+    
+    // 計算誤差（監視器時間 - 標準時間）
+    function calculateError() {
+      const std = document.getElementById("stdTime").value.trim();
+      const cam = document.getElementById("camTime").value.trim();
+      const errorResult = document.getElementById("errorResult");
+      
+      if (!isValidTimeFormat(std) || !isValidTimeFormat(cam)) {
+        errorResult.textContent = "請輸入正確格式 (HH:mm) 的標準時間與監視器時間";
+        return null;
+      }
+      
+      const stdSec = timeToSeconds(std);
+      const camSec = timeToSeconds(cam);
+      const diff = camSec - stdSec;
+      const absDiff = Math.abs(diff);
+      const min = Math.floor(absDiff / 60);
+      const sec = absDiff % 60;
+      const sign = diff > 0 ? "走快" : diff < 0 ? "走慢" : "一致";
+      
+      errorResult.textContent = 
+        diff === 0 
+        ? "時間一致，無誤差" 
+        : `監視器時間比標準時間${sign}：${min} 分 ${sec} 秒`;
+      
+      return diff;
+    }
+    
+    // 反推：根據「調閱標準時間」與誤差，計算對應的監視器時間
+    function calculateReverse() {
+      const diff = calculateError();
+      const query = document.getElementById("queryTime").value.trim();
+      const reverseResult = document.getElementById("reverseResult");
+      
+      if (diff === null) {
+        reverseResult.textContent = "";
+        return;
+      }
+      
+      if (!isValidTimeFormat(query)) {
+        reverseResult.textContent = "請輸入正確格式 (HH:mm) 的調閱標準時間";
+        return;
+      }
+      
+      const querySec = timeToSeconds(query);
+      const camTimeSec = querySec + diff; // 依據誤差修正
+      reverseResult.textContent = "對應的監視器時間應為：" + secondsToTime(camTimeSec);
+    }
+    
+    // 清除所有欄位與結果
+    function clearFields() {
+      document.getElementById("stdTime").value = "";
+      document.getElementById("camTime").value = "";
+      document.getElementById("queryTime").value = "";
+      document.getElementById("errorResult").textContent = "";
+      document.getElementById("reverseResult").textContent = "";
+    }
+    
+    // 當文件載入完成後，綁定事件
+    document.addEventListener("DOMContentLoaded", function() {
+      document.getElementById("stdTime").addEventListener("input", function() {
+        calculateError();
+        calculateReverse();
+      });
+      document.getElementById("camTime").addEventListener("input", function() {
+        calculateError();
+        calculateReverse();
+      });
+      document.getElementById("queryTime").addEventListener("input", calculateReverse);
+      
+      document.getElementById("clearBtn").addEventListener("click", clearFields);
+    });
+  </script>
+</body>
+</html>
