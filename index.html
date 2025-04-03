@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>監視器時間自動換算工具 - 反推功能</title>
   <style>
+    /* 預設樣式 */
     body {
       font-family: "Segoe UI", sans-serif;
       margin: 0;
@@ -14,6 +15,7 @@
       justify-content: center;
       align-items: center;
       min-height: 100vh;
+      transition: background-color 0.3s, color 0.3s;
     }
     .container {
       background: white;
@@ -22,6 +24,7 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       max-width: 400px;
       width: 90%;
+      transition: background-color 0.3s;
     }
     h2 {
       margin-top: 0;
@@ -43,6 +46,10 @@
       border: 1px solid #d1d5db;
       border-radius: 6px;
       background-color: #f9fafb;
+      transition: border-color 0.3s;
+    }
+    input[type="text"].error {
+      border-color: red;
     }
     .result {
       margin-top: 24px;
@@ -71,23 +78,57 @@
     .clear-btn:hover {
       background-color: #2563eb;
     }
-    @media (max-width: 500px) {
-      h2 { font-size: 1.3em; }
-      .result { font-size: 1em; }
+    .toggle-btn {
+      display: block;
+      margin: 0 auto 16px;
+      padding: 6px 12px;
+      font-size: 0.9em;
+      background-color: #6b7280;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .toggle-btn:hover {
+      background-color: #4b5563;
+    }
+    .version {
+      margin-top: 16px;
+      text-align: center;
+      font-size: 0.9em;
+      color: #6b7280;
+    }
+    /* 夜間模式樣式 */
+    body.night {
+      background-color: #222;
+      color: #eee;
+    }
+    .container.night {
+      background-color: #333;
+      box-shadow: none;
+    }
+    input[type="text"].night {
+      background-color: #444;
+      color: #eee;
+      border-color: #555;
+    }
+    .result.night {
+      color: #ddd;
     }
   </style>
 </head>
 <body>
-  <div class="container">
+  <div class="container" id="container">
+    <button class="toggle-btn" id="toggleBtn">切換夜間模式</button>
     <h2>監視器時間自動換算工具</h2>
     
     <!-- 誤差計算區 -->
     <label>標準時間（誤差計算用，HHmm）： 
-      <input type="text" id="stdTime" placeholder="例如：0825 表示 08:25" pattern="^\d{4}$">
+      <input type="text" id="stdTime" placeholder="例如：0825" pattern="^\d{4}$">
     </label>
     
     <label>監視器顯示時間（HHmm）： 
-      <input type="text" id="camTime" placeholder="例如：0758 表示 07:58" pattern="^\d{4}$">
+      <input type="text" id="camTime" placeholder="例如：0758" pattern="^\d{4}$">
     </label>
     
     <div class="result" id="errorResult"></div>
@@ -96,22 +137,25 @@
     
     <!-- 反推功能區 -->
     <label>調閱標準時間（反推用，HHmm）： 
-      <input type="text" id="queryTime" placeholder="例如：0620 表示 06:20" pattern="^\d{4}$">
+      <input type="text" id="queryTime" placeholder="例如：0620" pattern="^\d{4}$">
     </label>
     
     <div class="result" id="reverseResult"></div>
     
-    <!-- 新增地址欄位 -->
+    <!-- 地址欄位 -->
     <label>地址：
       <input type="text" id="address" placeholder="請輸入地址以便截圖記錄">
     </label>
     
     <!-- 清除按鈕 -->
     <button class="clear-btn" id="clearBtn">清除</button>
+    
+    <!-- 版本號 -->
+    <div class="version">版本 1.0</div>
   </div>
   
   <script>
-    // 驗證是否為四位數HHmm，並且小時 00~23，分鐘 00~59
+    // 驗證是否為四位數HHmm，且檢查小時與分鐘範圍
     function isValidHHmmFormat(str) {
       if (str.length !== 4) return false;
       if (!/^\d{4}$/.test(str)) return false;
@@ -122,29 +166,43 @@
       return true;
     }
     
-    // 將HHmm轉為秒數
+    // 將 HHmm 轉為秒數
     function hhmmToSeconds(str) {
       const hh = parseInt(str.slice(0, 2), 10);
       const mm = parseInt(str.slice(2, 4), 10);
       return hh * 3600 + mm * 60;
     }
     
-    // 將秒數轉回HHmm格式
+    // 將秒數轉回 HH:mm 格式（帶冒號）
     function secondsToHHmm(sec) {
       sec = ((sec % 86400) + 86400) % 86400;
       const h = Math.floor(sec / 3600);
       const m = Math.floor((sec % 3600) / 60);
-      return String(h).padStart(2, '0') + String(m).padStart(2, '0');
+      return String(h).padStart(2, '0') + ":" + String(m).padStart(2, '0');
     }
     
     // 計算誤差（監視器時間 - 標準時間）
     function calculateError() {
-      const stdStr = document.getElementById("stdTime").value.trim();
-      const camStr = document.getElementById("camTime").value.trim();
+      const stdInput = document.getElementById("stdTime");
+      const camInput = document.getElementById("camTime");
+      const stdStr = stdInput.value.trim();
+      const camStr = camInput.value.trim();
       const errorResult = document.getElementById("errorResult");
       
+      // 檢查格式並設定錯誤樣式
+      if (!isValidHHmmFormat(stdStr)) {
+        stdInput.classList.add("error");
+      } else {
+        stdInput.classList.remove("error");
+      }
+      if (!isValidHHmmFormat(camStr)) {
+        camInput.classList.add("error");
+      } else {
+        camInput.classList.remove("error");
+      }
+      
       if (!isValidHHmmFormat(stdStr) || !isValidHHmmFormat(camStr)) {
-        errorResult.textContent = "請輸入四位數時間，如 0825 代表 08:25";
+        errorResult.textContent = "請輸入正確格式，例：0825 代表 08:25";
         return null;
       }
       
@@ -157,17 +215,18 @@
       const sign = diff > 0 ? "走快" : diff < 0 ? "走慢" : "一致";
       
       errorResult.textContent =
-        diff === 0
+        diff === 0 
         ? "時間一致，無誤差"
-        : `監視器時間比標準時間${sign}：${min} 分 ${sec} 秒`;
+        : `監視器時間比標準時間${sign}：${secondsToHHmm(absDiff)}`;
       
       return diff;
     }
     
-    // 反推：根據「調閱標準時間」與誤差，計算對應的監視器時間（HHmm）
+    // 反推：根據「調閱標準時間」與誤差，計算對應的監視器時間
     function calculateReverse() {
       const diff = calculateError();
-      const queryStr = document.getElementById("queryTime").value.trim();
+      const queryInput = document.getElementById("queryTime");
+      const queryStr = queryInput.value.trim();
       const reverseResult = document.getElementById("reverseResult");
       
       if (diff === null) {
@@ -176,8 +235,11 @@
       }
       
       if (!isValidHHmmFormat(queryStr)) {
-        reverseResult.textContent = "請輸入四位數時間，如 0620 代表 06:20";
+        queryInput.classList.add("error");
+        reverseResult.textContent = "請輸入正確格式，例：0620 代表 06:20";
         return;
+      } else {
+        queryInput.classList.remove("error");
       }
       
       const querySec = hhmmToSeconds(queryStr);
@@ -193,6 +255,20 @@
       document.getElementById("address").value = "";
       document.getElementById("errorResult").textContent = "";
       document.getElementById("reverseResult").textContent = "";
+      document.getElementById("stdTime").classList.remove("error");
+      document.getElementById("camTime").classList.remove("error");
+      document.getElementById("queryTime").classList.remove("error");
+    }
+    
+    // 夜間模式切換
+    function toggleNightMode() {
+      document.body.classList.toggle("night");
+      document.getElementById("container").classList.toggle("night");
+      // 同時更新所有 input 與 result 的樣式
+      const inputs = document.querySelectorAll("input[type='text']");
+      inputs.forEach(input => input.classList.toggle("night"));
+      const results = document.querySelectorAll(".result");
+      results.forEach(r => r.classList.toggle("night"));
     }
     
     // 綁定事件
@@ -207,6 +283,7 @@
       });
       document.getElementById("queryTime").addEventListener("input", calculateReverse);
       document.getElementById("clearBtn").addEventListener("click", clearFields);
+      document.getElementById("toggleBtn").addEventListener("click", toggleNightMode);
     });
   </script>
 </body>
