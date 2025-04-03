@@ -1,0 +1,62 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>監視器時間自動換算工具</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f4; }
+        label { display: block; margin-top: 10px; }
+        input { padding: 5px; margin-top: 5px; width: 180px; }
+        .result { margin-top: 20px; font-size: 1.2em; color: #222; }
+    </style>
+</head>
+<body>
+    <h2>監視器時間自動換算工具</h2>
+
+    <label>標準時間（實際時間）：
+        <input type="time" id="actualTime">
+    </label>
+
+    <label>監視器顯示時間：
+        <input type="time" id="cameraTime">
+    </label>
+
+    <div class="result" id="resultText"></div>
+
+    <script>
+        function timeToSeconds(t) {
+            const [h, m] = t.split(":").map(Number);
+            return h * 3600 + m * 60;
+        }
+
+        function showDifference() {
+            const actual = document.getElementById("actualTime").value;
+            const camera = document.getElementById("cameraTime").value;
+            const result = document.getElementById("resultText");
+
+            if (!actual || !camera) {
+                result.textContent = "請輸入標準時間與監視器時間";
+                return;
+            }
+
+            const actualSec = timeToSeconds(actual);
+            const cameraSec = timeToSeconds(camera);
+            const diff = cameraSec - actualSec;
+            const absDiff = Math.abs(diff);
+            const sign = diff > 0 ? "走快" : diff < 0 ? "走慢" : "一致";
+
+            const min = Math.floor(absDiff / 60);
+            const sec = absDiff % 60;
+
+            result.textContent = 
+              diff === 0 
+              ? "時間一致，無誤差"
+              : `監視器時間比標準時間${sign}：${min} 分 ${sec} 秒`;
+        }
+
+        document.getElementById("actualTime").addEventListener("input", showDifference);
+        document.getElementById("cameraTime").addEventListener("input", showDifference);
+    </script>
+</body>
+</html>
