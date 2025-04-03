@@ -158,11 +158,11 @@
     
     <!-- 誤差計算區 -->
     <label>標準時間（誤差計算用，HH:mm）： 
-      <input type="text" id="stdTime" placeholder="例如：0825" pattern="^\d{4}$">
+      <input type="text" id="stdTime" placeholder="例如：0825" pattern="^\d{4}$" inputmode="numeric">
     </label>
     
     <label>監視器顯示時間（HH:mm）： 
-      <input type="text" id="camTime" placeholder="例如：0758" pattern="^\d{4}$">
+      <input type="text" id="camTime" placeholder="例如：0758" pattern="^\d{4}$" inputmode="numeric">
     </label>
     
     <div class="result" id="errorResult"></div>
@@ -171,7 +171,7 @@
     
     <!-- 反推功能區 -->
     <label>調閱標準時間（反推用，HH:mm）： 
-      <input type="text" id="queryTime" placeholder="例如：0620" pattern="^\d{4}$">
+      <input type="text" id="queryTime" placeholder="例如：0620" pattern="^\d{4}$" inputmode="numeric">
     </label>
     
     <div class="result" id="reverseResult"></div>
