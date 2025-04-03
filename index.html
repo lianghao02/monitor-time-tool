@@ -128,6 +128,27 @@
     .toggle-btn.night {
       background-color: #555;
     }
+    
+    /* 滿版手機樣式 */
+    @media (max-width: 600px) {
+      .container {
+        width: 100%;
+        max-width: 100%;
+        min-height: 100vh;
+        border-radius: 0;
+        box-shadow: none;
+        padding: 20px;
+      }
+      body {
+        align-items: flex-start;
+      }
+      h2 {
+        font-size: 1.3em;
+      }
+      .result {
+        font-size: 1em;
+      }
+    }
   </style>
 </head>
 <body>
@@ -164,7 +185,7 @@
     <button class="clear-btn" id="clearBtn">清除</button>
     
     <!-- 版本號 -->
-    <div class="version" id="versionInfo">版本 1.0</div>
+    <div class="version" id="versionInfo">版本 1.1</div>
   </div>
   
   <script>
