@@ -99,6 +99,13 @@
       font-size: 0.9em;
       color: #6b7280;
     }
+    /* 標準時間區塊 */
+    .cyu-time {
+      margin-bottom: 12px;
+      text-align: center;
+      font-size: 1em;
+      color: #2563eb;
+    }
     /* 夜間模式樣式 */
     body.night {
       background-color: #222;
@@ -128,7 +135,6 @@
     .toggle-btn.night {
       background-color: #555;
     }
-    
     /* 滿版手機樣式 */
     @media (max-width: 600px) {
       .container {
@@ -154,14 +160,18 @@
 <body>
   <div class="container" id="container">
     <button class="toggle-btn" id="toggleBtn">切換夜間模式</button>
+    
+    <!-- 標準時間區塊（自動更新） -->
+    <div class="cyu-time" id="cyuTime">標準時間：載入中…</div>
+    
     <h2>監視器時間自動換算工具</h2>
     
     <!-- 誤差計算區 -->
-    <label>標準時間（誤差計算用，HH:mm）： 
+    <label>標準時間（誤差計算用，HHmm）： 
       <input type="text" id="stdTime" placeholder="例如：0825" pattern="^\d{4}$" inputmode="numeric">
     </label>
     
-    <label>監視器顯示時間（HH:mm）： 
+    <label>監視器顯示時間（HHmm）： 
       <input type="text" id="camTime" placeholder="例如：0758" pattern="^\d{4}$" inputmode="numeric">
     </label>
     
@@ -170,7 +180,7 @@
     <hr>
     
     <!-- 反推功能區 -->
-    <label>調閱標準時間（反推用，HH:mm）： 
+    <label>調閱標準時間（反推用，HHmm）： 
       <input type="text" id="queryTime" placeholder="例如：0620" pattern="^\d{4}$" inputmode="numeric">
     </label>
     
@@ -185,10 +195,30 @@
     <button class="clear-btn" id="clearBtn">清除</button>
     
     <!-- 版本號 -->
-    <div class="version" id="versionInfo">版本 1.1</div>
+    <div class="version" id="versionInfo">版本 1.0</div>
   </div>
   
   <script>
+    // 格式化日期成 "YYYY年MM月DD日 HH:mm:ss"
+    function formatDate(date) {
+      const yyyy = date.getFullYear();
+      const MM = String(date.getMonth() + 1).padStart(2, '0');
+      const dd = String(date.getDate()).padStart(2, '0');
+      const hh = String(date.getHours()).padStart(2, '0');
+      const mm = String(date.getMinutes()).padStart(2, '0');
+      const ss = String(date.getSeconds()).padStart(2, '0');
+      return `${yyyy}年${MM}月${dd}日 ${hh}:${mm}:${ss}`;
+    }
+    
+    // 自動更新標準時間，每秒更新
+    function updateCYUTime() {
+      const cyuTimeEl = document.getElementById("cyuTime");
+      const now = new Date();
+      cyuTimeEl.textContent = "現在時間：" + formatDate(now);
+    }
+    setInterval(updateCYUTime, 1000);
+    updateCYUTime();
+    
     // 驗證是否為四位數HHmm，且檢查小時與分鐘範圍
     function isValidHHmmFormat(str) {
       if (str.length !== 4) return false;
@@ -223,7 +253,6 @@
       const camStr = camInput.value.trim();
       const errorResult = document.getElementById("errorResult");
       
-      // 檢查格式並設定錯誤樣式
       if (!isValidHHmmFormat(stdStr)) {
         stdInput.classList.add("error");
       } else {
@@ -244,7 +273,7 @@
       const camSec = hhmmToSeconds(camStr);
       const diff = camSec - stdSec;
       const absDiff = Math.abs(diff);
-      const sign = diff > 0 ? "走快" : diff < 0 ? "走慢" : "一致";
+      const sign = diff > 0 ? "快" : diff < 0 ? "慢" : "一致";
       
       errorResult.textContent =
         diff === 0 
