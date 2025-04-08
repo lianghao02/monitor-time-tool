@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>監視器時間自動換算工具 - 秒數版</title>
+  <title>監視器時間自動換算工具 - 簡易版</title>
   <style>
     body {
       font-family: "Segoe UI", sans-serif;
@@ -75,10 +75,10 @@
   <div class="container" id="container">
     <button class="btn toggle-btn" id="toggleBtn">切換夜間模式</button>
     <div id="cyuTime">標準時間：載入中…</div>
-    <label>標準時間（HHmmss）：<input type="text" id="stdTime" placeholder="例如：082530"></label>
-    <label>監視器時間（HHmmss）：<input type="text" id="camTime" placeholder="例如：075812"></label>
+    <label>標準時間（HH：mm）：<input type="text" id="stdTime" placeholder="例如：0825"></label>
+    <label>監視器顯示時間（HH：mm）：<input type="text" id="camTime" placeholder="例如：0758"></label>
     <div class="result" id="errorResult"></div>
-    <label>調閱標準時間（HHmmss）：<input type="text" id="queryTime" placeholder="例如：062010"></label>
+    <label>你要調閱的時間（HH：mm）：<input type="text" id="queryTime" placeholder="例如：0620"></label>
     <div class="result" id="reverseResult"></div>
     <label>地址：<input type="text" id="address" placeholder="請輸入地址以便截圖記錄"></label>
     <button class="btn clear-btn" id="clearBtn">清除</button>
@@ -97,42 +97,42 @@
     setInterval(updateCYUTime, 1000);
     updateCYUTime();
 
-    function isValidHHmmss(str) {
-      if (!/^\d{6}$/.test(str)) return false;
-      let h = +str.slice(0,2), m = +str.slice(2,4), s = +str.slice(4,6);
-      return h>=0 && h<24 && m>=0 && m<60 && s>=0 && s<60;
+    function isValidHHmm(str) {
+      if (!/^\d{4}$/.test(str)) return false;
+      let h = +str.slice(0,2), m = +str.slice(2,4);
+      return h>=0 && h<24 && m>=0 && m<60;
     }
-    function hhmmssToSec(str) {
-      return +str.slice(0,2)*3600 + +str.slice(2,4)*60 + +str.slice(4,6);
+    function hhmmToSec(str) {
+      return +str.slice(0,2)*3600 + +str.slice(2,4)*60;
     }
-    function secToHHmmss(sec) {
+    function secToHHmm(sec) {
       sec = ((sec % 86400) + 86400) % 86400;
-      let h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60), s = sec%60;
-      return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+      let h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60);
+      return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
     }
     function calculateError() {
       const std = document.getElementById("stdTime").value.trim();
       const cam = document.getElementById("camTime").value.trim();
       const out = document.getElementById("errorResult");
-      if (!isValidHHmmss(std) || !isValidHHmmss(cam)) {
-        out.textContent = "請輸入有效格式（HHmmss）";
+      if (!isValidHHmm(std) || !isValidHHmm(cam)) {
+        out.textContent = "請輸入有效格式（HHmm）";
         return null;
       }
-      let err = hhmmssToSec(cam) - hhmmssToSec(std);
+      let err = hhmmToSec(cam) - hhmmToSec(std);
       let sign = err === 0 ? "一致" : err > 0 ? "快" : "慢";
-      out.textContent = err === 0 ? "時間一致，無誤差" : `監視器時間比標準時間${sign}：${secToHHmmss(Math.abs(err))}`;
+      out.textContent = err === 0 ? "時間一致，無誤差" : `監視器時間比標準時間${sign}：${secToHHmm(Math.abs(err))}`;
       return err;
     }
     function calculateReverse() {
       let diff = calculateError();
       let q = document.getElementById("queryTime").value.trim();
       let out = document.getElementById("reverseResult");
-      if (diff === null || !isValidHHmmss(q)) {
-        out.textContent = "請輸入有效格式（HHmmss）";
+      if (diff === null || !isValidHHmm(q)) {
+        out.textContent = "請輸入有效格式（HHmm）";
         return;
       }
-      let time = hhmmssToSec(q) + diff;
-      out.textContent = "對應的監視器時間應為：" + secToHHmmss(time);
+      let time = hhmmToSec(q) + diff;
+      out.textContent = "對應的監視器時間應為：" + secToHHmm(time);
     }
     function clearAll() {
       ["stdTime","camTime","queryTime","address"].forEach(id => document.getElementById(id).value = "");
@@ -149,7 +149,11 @@
     function takeScreenshot() {
       html2canvas(document.querySelector(".container")).then(canvas => {
         const link = document.createElement("a");
-        link.download = "screenshot.png";
+        const addr = document.getElementById("address").value.trim();
+        const now = new Date();
+        const fileTime = now.toISOString().slice(0,16).replace(/[-T:]/g, "");
+        const filename = `${fileTime}_${addr || '監視器記錄'}.png`;
+        link.download = filename;
         link.href = canvas.toDataURL();
         link.click();
       });
