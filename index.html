@@ -3,9 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>監視器時間自動換算工具 - 反推功能</title>
+  <title>監視器時間自動換算工具 - 秒數版</title>
   <style>
-    /* 預設樣式 */
     body {
       font-family: "Segoe UI", sans-serif;
       margin: 0;
@@ -27,12 +26,6 @@
       width: 90%;
       transition: background-color 0.3s;
     }
-    h2 {
-      margin-top: 0;
-      font-size: 1.5em;
-      color: #111827;
-      text-align: center;
-    }
     label {
       display: block;
       margin-top: 16px;
@@ -47,305 +40,129 @@
       border: 1px solid #d1d5db;
       border-radius: 6px;
       background-color: #f9fafb;
-      transition: border-color 0.3s;
-    }
-    input[type="text"].error {
-      border-color: red;
     }
     .result {
-      margin-top: 24px;
-      font-size: 1.2em;
+      margin-top: 20px;
+      font-size: 1.1em;
       font-weight: bold;
-      color: #1f2937;
       text-align: center;
     }
-    hr {
-      margin: 24px 0;
-      border: 0;
-      border-top: 1px solid #e5e7eb;
+    .night {
+      background-color: #222 !important;
+      color: #ddd !important;
     }
-    .clear-btn {
-      display: block;
-      width: 100%;
-      padding: 10px;
-      margin-top: 16px;
-      font-size: 1em;
-      background-color: #3b82f6;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    .clear-btn:hover {
-      background-color: #2563eb;
-    }
-    .toggle-btn {
-      display: block;
-      margin: 0 auto 16px;
-      padding: 6px 12px;
-      font-size: 0.9em;
-      background-color: #6b7280;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    .toggle-btn:hover {
-      background-color: #4b5563;
-    }
-    .version {
-      margin-top: 16px;
-      text-align: center;
-      font-size: 0.9em;
-      color: #6b7280;
-    }
-    /* 標準時間區塊 */
-    .cyu-time {
-      margin-bottom: 12px;
-      text-align: center;
-      font-size: 1em;
-      color: #2563eb;
-    }
-    /* 夜間模式樣式 */
-    body.night {
-      background-color: #222;
-      color: #ddd;
-    }
-    .container.night {
+    .night input[type="text"] {
       background-color: #333;
-      box-shadow: none;
-    }
-    .container.night h2 {
       color: #fff;
-    }
-    .container.night label {
-      color: #ccc;
-    }
-    input[type="text"].night {
-      background-color: #444;
-      color: #eee;
       border-color: #555;
     }
-    .result.night {
-      color: #ddd;
+    .btn {
+      margin-top: 16px;
+      padding: 10px;
+      width: 100%;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1em;
     }
-    .version.night {
-      color: #aaa;
-    }
-    .toggle-btn.night {
-      background-color: #555;
-    }
-    /* 滿版手機樣式 */
-    @media (max-width: 600px) {
-      .container {
-        width: 100%;
-        max-width: 100%;
-        min-height: 100vh;
-        border-radius: 0;
-        box-shadow: none;
-        padding: 20px;
-      }
-      body {
-        align-items: flex-start;
-      }
-      h2 {
-        font-size: 1.3em;
-      }
-      .result {
-        font-size: 1em;
-      }
-    }
+    .toggle-btn { background-color: #6b7280; color: white; }
+    .clear-btn { background-color: #3b82f6; color: white; }
+    .shot-btn { background-color: #10b981; color: white; }
+    .btn:hover { opacity: 0.9; }
   </style>
 </head>
 <body>
   <div class="container" id="container">
-    <button class="toggle-btn" id="toggleBtn">切換夜間模式</button>
-    
-    <!-- 標準時間區塊（自動更新） -->
-    <div class="cyu-time" id="cyuTime">標準時間：載入中…</div>
-    
-    <h2>監視器時間自動換算工具</h2>
-    
-    <!-- 誤差計算區 -->
-    <label>標準時間（誤差計算用，HHmm）： 
-      <input type="text" id="stdTime" placeholder="例如：0825" pattern="^\d{4}$" inputmode="numeric">
-    </label>
-    
-    <label>監視器顯示時間（HHmm）： 
-      <input type="text" id="camTime" placeholder="例如：0758" pattern="^\d{4}$" inputmode="numeric">
-    </label>
-    
+    <button class="btn toggle-btn" id="toggleBtn">切換夜間模式</button>
+    <div id="cyuTime">標準時間：載入中…</div>
+    <label>標準時間（HHmmss）：<input type="text" id="stdTime" placeholder="例如：082530"></label>
+    <label>監視器時間（HHmmss）：<input type="text" id="camTime" placeholder="例如：075812"></label>
     <div class="result" id="errorResult"></div>
-    
-    <hr>
-    
-    <!-- 反推功能區 -->
-    <label>調閱標準時間（反推用，HHmm）： 
-      <input type="text" id="queryTime" placeholder="例如：0620" pattern="^\d{4}$" inputmode="numeric">
-    </label>
-    
+    <label>調閱標準時間（HHmmss）：<input type="text" id="queryTime" placeholder="例如：062010"></label>
     <div class="result" id="reverseResult"></div>
-    
-    <!-- 地址欄位 -->
-    <label>地址：
-      <input type="text" id="address" placeholder="請輸入地址以便截圖記錄(不填也可以)">
-    </label>
-    
-    <!-- 清除按鈕 -->
-    <button class="clear-btn" id="clearBtn">清除</button>
-    
-    <!-- 版本號 -->
-    <div class="version" id="versionInfo">版本 1.0</div>
+    <label>地址：<input type="text" id="address" placeholder="請輸入地址以便截圖記錄"></label>
+    <button class="btn clear-btn" id="clearBtn">清除</button>
+    <button class="btn shot-btn" id="shotBtn">擷取畫面</button>
+    <div class="version">版本 1.1</div>
   </div>
-  
+
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
   <script>
-    // 格式化日期成 "YYYY年MM月DD日 HH:mm:ss"
-    function formatDate(date) {
-      const yyyy = date.getFullYear();
-      const MM = String(date.getMonth() + 1).padStart(2, '0');
-      const dd = String(date.getDate()).padStart(2, '0');
-      const hh = String(date.getHours()).padStart(2, '0');
-      const mm = String(date.getMinutes()).padStart(2, '0');
-      const ss = String(date.getSeconds()).padStart(2, '0');
-      return `${yyyy}年${MM}月${dd}日 ${hh}:${mm}:${ss}`;
+    function formatDate(d) {
+      return `${d.getFullYear()}年${(d.getMonth()+1).toString().padStart(2,'0')}月${d.getDate().toString().padStart(2,'0')}日 ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}:${d.getSeconds().toString().padStart(2,'0')}`;
     }
-    
-    // 自動更新標準時間，每秒更新
     function updateCYUTime() {
-      const cyuTimeEl = document.getElementById("cyuTime");
-      const now = new Date();
-      cyuTimeEl.textContent = "現在時間：" + formatDate(now);
+      document.getElementById("cyuTime").textContent = "現在時間：" + formatDate(new Date());
     }
     setInterval(updateCYUTime, 1000);
     updateCYUTime();
-    
-    // 驗證是否為四位數HHmm，且檢查小時與分鐘範圍
-    function isValidHHmmFormat(str) {
-      if (str.length !== 4) return false;
-      if (!/^\d{4}$/.test(str)) return false;
-      const hh = parseInt(str.slice(0, 2), 10);
-      const mm = parseInt(str.slice(2, 4), 10);
-      if (hh < 0 || hh > 23) return false;
-      if (mm < 0 || mm > 59) return false;
-      return true;
+
+    function isValidHHmmss(str) {
+      if (!/^\d{6}$/.test(str)) return false;
+      let h = +str.slice(0,2), m = +str.slice(2,4), s = +str.slice(4,6);
+      return h>=0 && h<24 && m>=0 && m<60 && s>=0 && s<60;
     }
-    
-    // 將 HHmm 轉為秒數
-    function hhmmToSeconds(str) {
-      const hh = parseInt(str.slice(0, 2), 10);
-      const mm = parseInt(str.slice(2, 4), 10);
-      return hh * 3600 + mm * 60;
+    function hhmmssToSec(str) {
+      return +str.slice(0,2)*3600 + +str.slice(2,4)*60 + +str.slice(4,6);
     }
-    
-    // 將秒數轉回 HH:mm 格式（帶冒號）
-    function secondsToHHmm(sec) {
+    function secToHHmmss(sec) {
       sec = ((sec % 86400) + 86400) % 86400;
-      const h = Math.floor(sec / 3600);
-      const m = Math.floor((sec % 3600) / 60);
-      return String(h).padStart(2, '0') + ":" + String(m).padStart(2, '0');
+      let h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60), s = sec%60;
+      return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
     }
-    
-    // 計算誤差（監視器時間 - 標準時間）
     function calculateError() {
-      const stdInput = document.getElementById("stdTime");
-      const camInput = document.getElementById("camTime");
-      const stdStr = stdInput.value.trim();
-      const camStr = camInput.value.trim();
-      const errorResult = document.getElementById("errorResult");
-      
-      if (!isValidHHmmFormat(stdStr)) {
-        stdInput.classList.add("error");
-      } else {
-        stdInput.classList.remove("error");
-      }
-      if (!isValidHHmmFormat(camStr)) {
-        camInput.classList.add("error");
-      } else {
-        camInput.classList.remove("error");
-      }
-      
-      if (!isValidHHmmFormat(stdStr) || !isValidHHmmFormat(camStr)) {
-        errorResult.textContent = "請輸入正確格式，例：0825 代表 08:25";
+      const std = document.getElementById("stdTime").value.trim();
+      const cam = document.getElementById("camTime").value.trim();
+      const out = document.getElementById("errorResult");
+      if (!isValidHHmmss(std) || !isValidHHmmss(cam)) {
+        out.textContent = "請輸入有效格式（HHmmss）";
         return null;
       }
-      
-      const stdSec = hhmmToSeconds(stdStr);
-      const camSec = hhmmToSeconds(camStr);
-      const diff = camSec - stdSec;
-      const absDiff = Math.abs(diff);
-      const sign = diff > 0 ? "快" : diff < 0 ? "慢" : "一致";
-      
-      errorResult.textContent =
-        diff === 0 
-        ? "時間一致，無誤差" 
-        : `監視器時間比標準時間${sign}：${secondsToHHmm(absDiff)}`;
-      
-      return diff;
+      let err = hhmmssToSec(cam) - hhmmssToSec(std);
+      let sign = err === 0 ? "一致" : err > 0 ? "快" : "慢";
+      out.textContent = err === 0 ? "時間一致，無誤差" : `監視器時間比標準時間${sign}：${secToHHmmss(Math.abs(err))}`;
+      return err;
     }
-    
-    // 反推：根據「調閱標準時間」與誤差，計算對應的監視器時間
     function calculateReverse() {
-      const diff = calculateError();
-      const queryInput = document.getElementById("queryTime");
-      const queryStr = queryInput.value.trim();
-      const reverseResult = document.getElementById("reverseResult");
-      
-      if (diff === null) {
-        reverseResult.textContent = "";
+      let diff = calculateError();
+      let q = document.getElementById("queryTime").value.trim();
+      let out = document.getElementById("reverseResult");
+      if (diff === null || !isValidHHmmss(q)) {
+        out.textContent = "請輸入有效格式（HHmmss）";
         return;
       }
-      
-      if (!isValidHHmmFormat(queryStr)) {
-        queryInput.classList.add("error");
-        reverseResult.textContent = "請輸入正確格式，例：0620 代表 06:20";
-        return;
-      } else {
-        queryInput.classList.remove("error");
-      }
-      
-      const querySec = hhmmToSeconds(queryStr);
-      const camTimeSec = querySec + diff;
-      reverseResult.textContent = "對應的監視器時間應為：" + secondsToHHmm(camTimeSec);
+      let time = hhmmssToSec(q) + diff;
+      out.textContent = "對應的監視器時間應為：" + secToHHmmss(time);
     }
-    
-    // 清除所有欄位與結果
-    function clearFields() {
-      document.getElementById("stdTime").value = "";
-      document.getElementById("camTime").value = "";
-      document.getElementById("queryTime").value = "";
-      document.getElementById("address").value = "";
-      document.getElementById("errorResult").textContent = "";
-      document.getElementById("reverseResult").textContent = "";
-      document.getElementById("stdTime").classList.remove("error");
-      document.getElementById("camTime").classList.remove("error");
-      document.getElementById("queryTime").classList.remove("error");
+    function clearAll() {
+      ["stdTime","camTime","queryTime","address"].forEach(id => document.getElementById(id).value = "");
+      ["errorResult","reverseResult"].forEach(id => document.getElementById(id).textContent = "");
     }
-    
-    // 夜間模式切換
     function toggleNightMode() {
-      document.body.classList.toggle("night");
+      let isNight = document.body.classList.toggle("night");
       document.getElementById("container").classList.toggle("night");
-      const inputs = document.querySelectorAll("input[type='text']");
-      inputs.forEach(input => input.classList.toggle("night"));
-      const results = document.querySelectorAll(".result");
-      results.forEach(r => r.classList.toggle("night"));
-      document.querySelector(".version").classList.toggle("night");
-      document.querySelector(".toggle-btn").classList.toggle("night");
+      localStorage.setItem("nightMode", isNight ? "on" : "off");
     }
-    
-    // 綁定事件
+    function applyNightFromStorage() {
+      if (localStorage.getItem("nightMode") === "on") toggleNightMode();
+    }
+    function takeScreenshot() {
+      html2canvas(document.querySelector(".container")).then(canvas => {
+        const link = document.createElement("a");
+        link.download = "screenshot.png";
+        link.href = canvas.toDataURL();
+        link.click();
+      });
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
-      document.getElementById("stdTime").addEventListener("input", () => {
-        calculateError();
-        calculateReverse();
+      ["stdTime","camTime","queryTime"].forEach(id => {
+        document.getElementById(id).addEventListener("input", calculateReverse);
       });
-      document.getElementById("camTime").addEventListener("input", () => {
-        calculateError();
-        calculateReverse();
-      });
-      document.getElementById("queryTime").addEventListener("input", calculateReverse);
-      document.getElementById("clearBtn").addEventListener("click", clearFields);
+      document.getElementById("clearBtn").addEventListener("click", clearAll);
       document.getElementById("toggleBtn").addEventListener("click", toggleNightMode);
+      document.getElementById("shotBtn").addEventListener("click", takeScreenshot);
+      applyNightFromStorage();
     });
   </script>
 </body>
