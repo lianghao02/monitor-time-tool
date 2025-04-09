@@ -76,14 +76,16 @@
     <button class="btn toggle-btn" id="toggleBtn">切換夜間模式</button>
     <div id="cyuTime">標準時間：載入中…</div>
     <label>標準時間（HH：mm）：<input type="text" id="stdTime" placeholder="例如：0825"></label>
-    <label>監視器顯示時間（HH：mm）：<input type="text" id="camTime" placeholder="例如：0758"></label>
+    <label>監視器時間（HH：mm）：<input type="text" id="camTime" placeholder="例如：0758"></label>
     <div class="result" id="errorResult"></div>
-    <label>你要調閱的時間（HH：mm）：<input type="text" id="queryTime" placeholder="例如：0620"></label>
+    <label>調閱標準時間（HH：mm）：<input type="text" id="queryTime" placeholder="例如：0620"></label>
     <div class="result" id="reverseResult"></div>
+    <label>顯示之監視器時間（反推標準時間用，HH：mm）：<input type="text" id="backCalcCamTime" placeholder="例如：0645"></label>
+    <div class="result" id="backCalcResult"></div>
     <label>地址：<input type="text" id="address" placeholder="請輸入地址以便截圖記錄"></label>
     <button class="btn clear-btn" id="clearBtn">清除</button>
     <button class="btn shot-btn" id="shotBtn">擷取畫面</button>
-    <div class="version">版本 1.1</div>
+    <div class="version">版本 1.2</div>
   </div>
 
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
@@ -134,9 +136,20 @@
       let time = hhmmToSec(q) + diff;
       out.textContent = "對應的監視器時間應為：" + secToHHmm(time);
     }
+    function calculateBackToStandard() {
+      let diff = calculateError();
+      let camVal = document.getElementById("backCalcCamTime").value.trim();
+      let out = document.getElementById("backCalcResult");
+      if (diff === null || !isValidHHmm(camVal)) {
+        out.textContent = "請輸入有效格式（HHmm）";
+        return;
+      }
+      let actualSec = hhmmToSec(camVal) - diff;
+      out.textContent = "對應的標準時間應為：" + secToHHmm(actualSec);
+    }
     function clearAll() {
-      ["stdTime","camTime","queryTime","address"].forEach(id => document.getElementById(id).value = "");
-      ["errorResult","reverseResult"].forEach(id => document.getElementById(id).textContent = "");
+      ["stdTime","camTime","queryTime","backCalcCamTime","address"].forEach(id => document.getElementById(id).value = "");
+      ["errorResult","reverseResult","backCalcResult"].forEach(id => document.getElementById(id).textContent = "");
     }
     function toggleNightMode() {
       let isNight = document.body.classList.toggle("night");
@@ -160,8 +173,11 @@
     }
 
     document.addEventListener("DOMContentLoaded", () => {
-      ["stdTime","camTime","queryTime"].forEach(id => {
-        document.getElementById(id).addEventListener("input", calculateReverse);
+      ["stdTime","camTime","queryTime","backCalcCamTime"].forEach(id => {
+        document.getElementById(id).addEventListener("input", () => {
+          calculateReverse();
+          calculateBackToStandard();
+        });
       });
       document.getElementById("clearBtn").addEventListener("click", clearAll);
       document.getElementById("toggleBtn").addEventListener("click", toggleNightMode);
